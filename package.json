@@ -1,0 +1,28 @@
+{
+  "name": "nodrus",
+  "version": "0.0.1",
+  "private": true,
+  "description": "нектар",
+  "main": "index.js",
+  "authors": {
+    "name": "Alexey Vedmedenko",
+    "email": "vedmalex@gmail.com"
+  },
+  "repository": "vedmalex/NODRUS",
+  "scripts": {
+    "dev": "vuepress dev .",
+    "build": "vuepress build ."
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "markdown-it-html5-embed": "^1.0.0",
+    "vuepress": "^1.9.7",
+    "vuepress-plugin-fulltext-search": "^2.2.1",
+    "eslint": "^8.14.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "prettier": "^2.6.2"
+  }
+}
