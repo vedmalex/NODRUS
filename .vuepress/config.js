@@ -26,7 +26,8 @@ module.exports = {
    */
   themeConfig: {
     repo: 'vedmalex/NODRUS',
-    docsDir: 'src',
+    docsBranch: 'main',
+    docsDir: './',
     editLinks: true,
     editLinkText: 'Нашли ошибку? Редактировать...',
     lastUpdated: 'Обновление',
