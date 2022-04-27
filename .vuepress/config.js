@@ -4,7 +4,7 @@ module.exports = {
   lang: 'ru-RU',
   title: 'Нектар преданности',
   description: description,
-
+  base: '/NODRUS/',
   /**
    * Extra tags to be injected to the page HTML `<head>`
    *
