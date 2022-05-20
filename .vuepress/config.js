@@ -58,6 +58,10 @@ module.exports = {
         text: 'Северная часть',
         link: '/4000/index.md',
       },
+      {
+        text: 'Вопросы',
+        link: '/questions/index.md',
+      },
     ],
     // sidebar: 'auto',
     sidebar: {
@@ -108,6 +112,44 @@ module.exports = {
             { title: 'Занятие 17', path: '/quest_by_chapter/b-170.md' },
             { title: 'Занятие 18', path: '/quest_by_chapter/b-180.md' },
             { title: 'Занятие 19', path: '/quest_by_chapter/b-190.md' },
+          ],
+        },
+        {
+          title: 'Вопросы',
+          path: '/questions/index',
+          children: [
+            {
+              title: 'Занятие №1',
+              path: '/questions/1.md',
+            },
+            {
+              title: 'Занятие №2',
+              path: '/questions/2.md',
+            },
+            {
+              title: 'Занятие №3',
+              path: '/questions/3.md',
+            },
+            {
+              title: 'Занятие №4',
+              path: '/questions/4.md',
+            },
+            {
+              title: 'Занятие №5',
+              path: '/questions/5.md',
+            },
+            {
+              title: 'Занятие №6',
+              path: '/questions/6.md',
+            },
+            {
+              title: 'Занятие №7',
+              path: '/questions/7.md',
+            },
+            {
+              title: 'Занятие №8',
+              path: '/questions/8.md',
+            },
           ],
         },
         {
