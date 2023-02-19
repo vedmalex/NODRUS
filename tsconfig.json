@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "declaration": true,
+    "importHelpers": true,
+    "declarationMap": true,
+    "removeComments": true,
+    "strict": true,
+    "strictNullChecks": true,
+    "strictBindCallApply": true,
+    "strictFunctionTypes": true,
+    "strictPropertyInitialization": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": false,
+    "noImplicitOverride": true,
+    "noImplicitThis": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedParameters": false,
+    "noUnusedLocals": true,
+    "forceConsistentCasingInFileNames": true,
+    "lib": ["ES2020"],
+    "allowSyntheticDefaultImports": true,
+    "target": "es2018",
+    "experimentalDecorators": true,
+    "moduleResolution": "node",
+    "types": ["node", "jest"],
+    "baseUrl": ".",
+    "outDir": "types",
+    "rootDir": "utils",
+    "allowJs": true,
+    "paths": {
+      // "@DTO/*": ["./src/dto/*"] // алиас для DTO
+      // "@/*": ["./*"], // алиас для текущей директории
+      // "~/*": ["./src/*"] // алиас для корневой директории
+    }
+  },
+  "include": ["./src/**/*", "types/global.d.ts"],
+  "exclude": ["./src/__tests__"]
+}
