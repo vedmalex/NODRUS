@@ -27,7 +27,7 @@ const linkstoload = [
 
 // предоположительно работать будет из кэша
 
-let url = linkstoload.shift();
+let url;
 async function processPages() {
   while (linkstoload.length > 0) {
     url = linkstoload.shift();

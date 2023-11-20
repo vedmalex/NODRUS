@@ -27,24 +27,23 @@ async function getPageCached(url, baseurl, htmlFolder) {
     logline(` ${fullName}`);
     debugger;
     fs.writeFileSync(fullName, content);
-    return content;
-  } else {
-    try {
-      const result = prettier.format(text, {
-        parser: "html",
-        htmlWhitespaceSensitivity: "ignore",
-      });
-      if (result != text) {
-        logline(`prettify ${fullName}`);
-        fs.writeFileSync(fullName, result);
-      } else {
-        logline(`skipping ${fullName}`);
-      }
-      return result;
-    } catch (err) {
-      logline(`error ${fullName}`);
-      throw err;
+    text = content;
+  }
+  try {
+    const result = prettier.format(text, {
+      parser: "html",
+      htmlWhitespaceSensitivity: "ignore",
+    });
+    if (result != text) {
+      logline(`prettify ${fullName}`);
+      fs.writeFileSync(fullName, result);
+    } else {
+      logline(`skipping ${fullName}`);
     }
+    return result;
+  } catch (err) {
+    logline(`error ${fullName}`);
+    throw err;
   }
 }
 
