@@ -1,0 +1,13 @@
+замены
+
+&nbsp; -> ' '
+.</em> -> </em>.
+:</em> -> </em>:
+<em>( -> <em>(
+)</em> -> </em>)
+
+перенумеровать абзацы
+
+em class="term"
+em class="citation"
+em class="sloka"

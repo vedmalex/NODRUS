@@ -26,10 +26,9 @@ const linkstoload = [
 
 // предоположительно работать будет из кэша
 
-let url
 async function processPages() {
   while (linkstoload.length > 0) {
-    url = linkstoload.shift()
+    let url = linkstoload.shift()
     const text = await getPageCached(url, baseurl, htmlFolder)
     const links = [...getToc(text, site), ...getVerses(text, site), ...getBook(text, site)]
     links.forEach((link) => linkstoload.push(link.href))
