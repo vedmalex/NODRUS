@@ -9,7 +9,8 @@ const { logline } = require("./logline");
 
 const site = "https://vedabase.io";
 exports.site = site;
-const baseurl = `${site}/ru/library/`;
+// const baseurl = `${site}/ru/library/`;
+const baseurl = `${site}`;
 const htmlFolder = "./sources/";
 
 fs.existsSync(path.join(htmlFolder, "dump.json"));
@@ -26,9 +27,10 @@ const linkstoload = [
 
 // предоположительно работать будет из кэша
 
+let url = linkstoload.shift();
 async function processPages() {
   while (linkstoload.length > 0) {
-    let url = linkstoload.shift();
+    url = linkstoload.shift();
     const text = await getPageCached(url, baseurl, htmlFolder);
     const links = [...getToc(text, site), ...getVerses(text, site), ...getBook(text, site)];
     links.forEach((link) => linkstoload.push(link.href));
@@ -43,6 +45,8 @@ processPages()
     }
   })
   .catch((err) => {
+    console.log();
+    console.log(url);
     console.log(err);
     linkstoload.unshift(url);
     fs.writeJSONSync(path.join(htmlFolder, "dump.json"), linkstoload);
