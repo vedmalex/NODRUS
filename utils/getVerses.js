@@ -1,6 +1,6 @@
 // @ts-check
-const path = require('node:path')
-const cheerio = require('cheerio')
+const path = require("node:path");
+const cheerio = require("cheerio");
 
 /**
  * @returns { Array<{text:string, href: string}>}
@@ -8,11 +8,11 @@ const cheerio = require('cheerio')
  * @param {string} site
  */
 function getVerses(page, site) {
-  const $ = cheerio.load(page)
-  const list = $('.r-verse a')
+  const $ = cheerio.load(page);
+  const list = $(".r-verse a");
   return [...list].map((item) => ({
     href: path.join(site, item.attribs.href),
-    text: item.children.map((t) => t.data).join('\n'),
-  }))
+    text: item.children.map((t) => t.data).join("\n"),
+  }));
 }
-exports.getVerses = getVerses
+exports.getVerses = getVerses;

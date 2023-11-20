@@ -1,6 +1,6 @@
-//https://qna.habr.com/q/599563
+// https://qna.habr.com/q/599563
 
-const API_ID = 7628781 // код свой;
+const API_ID = 7628781; // код свой;
 
 export function injectVKOpenApi() {
   return new Promise((resolve, reject) => {
@@ -27,8 +27,7 @@ export function injectVKOpenApi() {
  * This initializes the VK api
  * @param {boolean} onlyWidgets
  */
-export const initVK = (onlyWidgets = false) => () =>
-  VK.init({ apiId: API_ID, onlyWidgets });
+export const initVK = (onlyWidgets = false) => () => VK.init({ apiId: API_ID, onlyWidgets });
 
 export const initCallVK = () =>
   new Promise((resolve, reject) => {
