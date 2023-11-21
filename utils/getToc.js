@@ -12,7 +12,7 @@ function getToc(page, site) {
   const list = $(".r-chapter a");
   return [...list].map((item) => ({
     href: path.join(site, item.attribs.href),
-    text: item.children.map((t) => t.data).join("\n"),
+    text: item.children?.map((t) => t.data).join("\n"),
   }));
 }
 exports.getToc = getToc;
