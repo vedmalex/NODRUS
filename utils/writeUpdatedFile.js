@@ -25,14 +25,10 @@ async function writeUpdatedFile(url, baseurl, htmlFolder, text) {
     try {
       const result = prettier.format(text, {
         parser: "html",
-        htmlWhitespaceSensitivity: "ignore",
+        htmlWhitespaceSensitivity: "css",
       });
-      if (result != text) {
-        logline(`prettify ${fullName}`);
-        fs.writeFileSync(fullName, result);
-      } else {
-        logline(`skipping ${fullName}`);
-      }
+      // const result = text;
+      fs.writeFileSync(fullName, result);
       return result;
     } catch (err) {
       logline(`error ${fullName}`);

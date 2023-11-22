@@ -22,7 +22,7 @@
     "noUnusedLocals": true,
     "forceConsistentCasingInFileNames": true,
     "lib": [
-      "ES2020"
+      "ESNext"
     ],
     "allowSyntheticDefaultImports": true,
     "target": "es2018",
