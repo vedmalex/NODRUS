@@ -11,7 +11,7 @@ const site = "https://vedabase.io/";
 exports.site = site;
 const baseurl = `${site}/ru/library/`;
 exports.baseurl = baseurl;
-const htmlFolder = "./sources/";
+const htmlFolder = "./new_source/";
 exports.htmlFolder = htmlFolder;
 
 fs.existsSync(path.join(htmlFolder, "dump.json"));
@@ -19,7 +19,14 @@ fs.existsSync(path.join(htmlFolder, "dump.json"));
 /** @type {Array<string>} */
 const linkstoload = fs.existsSync(path.join(htmlFolder, "dump.json"))
   ? fs.readJSONSync(path.join(htmlFolder, "dump.json"))
-  : ["https://vedabase.io/ru/library/sb/", "https://vedabase.io/ru/library/cc/"];
+  : [
+    "https://vedabase.io/ru/library/bg/",
+    "https://vedabase.io/ru/library/iso/",
+    "https://vedabase.io/ru/library/nod/",
+    "https://vedabase.io/ru/library/noi/",
+    "https://vedabase.io/ru/library/sb/",
+    "https://vedabase.io/ru/library/cc/",
+  ];
 
 let url;
 async function processPages() {

@@ -9,40 +9,40 @@ const prettier = require("prettier");
  * @param {string} url
  * @param {string} baseurl
  * @param {string} htmlFolder
+ * @param {string} backupFolder
  */
-async function getPageCached(url, baseurl, htmlFolder) {
+async function getPageCached(url, baseurl, htmlFolder, backupFolder) {
   let relativeUrl = path.relative(baseurl, url);
   const fileName = path.parse(relativeUrl);
   if (fileName.ext == "") relativeUrl = `${relativeUrl}.html`;
-  const fullName = path.join(htmlFolder, relativeUrl);
+  const fileNameDest = path.join(htmlFolder, relativeUrl);
+  const fileNameSource = path.join(backupFolder, relativeUrl);
   let text;
-  if (fs.pathExistsSync(fullName)) {
-    text = fs.readFileSync(fullName).toString();
+  if (fs.pathExistsSync(fileNameSource)) {
+    text = fs.readFileSync(fileNameSource).toString();
   } else {
-    text = await getPage(url, baseurl, htmlFolder);
+    text = await getPage(url, baseurl, backupFolder);
   }
   const $ = cheerio.load(text);
   const content = $("#content").html();
   if (content) {
-    logline(` ${fullName}`);
-    debugger;
-    fs.writeFileSync(fullName, content);
+    logline(` ${fileNameDest}`);
     text = content;
   }
   try {
     const result = prettier.format(text, {
       parser: "html",
-      htmlWhitespaceSensitivity: "ignore",
+      htmlWhitespaceSensitivity: "css",
     });
     if (result != text) {
-      logline(`prettify ${fullName}`);
-      fs.writeFileSync(fullName, result);
+      logline(`prettify ${fileNameDest}`);
+      fs.writeFileSync(fileNameDest, result);
     } else {
-      logline(`skipping ${fullName}`);
+      logline(`skipping ${fileNameDest}`);
     }
     return result;
   } catch (err) {
-    logline(`error ${fullName}`);
+    logline(`error ${fileNameDest}`);
     throw err;
   }
 }

@@ -12,6 +12,7 @@ exports.site = site;
 // const baseurl = `${site}/ru/library/`;
 const baseurl = `${site}`;
 const htmlFolder = "./sources/";
+const backupFolder = "./backup/";
 
 fs.existsSync(path.join(htmlFolder, "dump.json"));
 
@@ -31,7 +32,7 @@ let url;
 async function processPages() {
   while (linkstoload.length > 0) {
     url = linkstoload.shift();
-    const text = await getPageCached(url, baseurl, htmlFolder);
+    const text = await getPageCached(url, baseurl, htmlFolder, backupFolder);
     const links = [...getToc(text, site), ...getVerses(text, site), ...getBook(text, site)];
     links.forEach((link) => linkstoload.push(link.href));
   }

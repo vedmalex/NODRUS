@@ -28,6 +28,7 @@ async function writeUpdatedFile(url, baseurl, htmlFolder, text) {
         htmlWhitespaceSensitivity: "css",
       });
       // const result = text;
+      fs.ensureDirSync(path.dirname(fullName));
       fs.writeFileSync(fullName, result);
       return result;
     } catch (err) {

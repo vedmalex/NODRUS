@@ -55,10 +55,24 @@ async function processPages(...actions) {
   }
 }
 
-const dict = new Map();
-/** @type Record<string,number> */
-let ids = {};
-let count = 0;
+class Dict {
+  /** @type {Map<string, {id: number, items:any, [key:string]:any}>} */
+  dict = new Map();
+  /** @type Record<string,number> */
+  ids = {};
+  count = 0;
+  ensure(/** @type {string}*/ content) {
+    if (!this.dict.has(content)) {
+      this.count += 1;
+      this.ids[content] = this.count;
+      this.dict.set(content, { id: this.count, items: [] });
+    }
+  }
+}
+
+const dict = new Dict();
+const quotes = new Dict();
+const sanskrit = new Dict();
 
 // TODO: переписать под новую версию
 // const loadCheerio = (self, selector) => {
@@ -72,7 +86,12 @@ let count = 0;
 // };
 
 const delimiters = [".", ",", "!", "?", ":", ";", "—", "(", ")", " ", "\n", "\r"];
-function splitString(str) {
+const sentenceDelim = [".", "!", "?"];
+/**
+ * @param {string} str
+ * @param {string[]} delimiters
+ */
+function splitString(str, delimiters) {
   let result = [];
   let currentWord = "";
 
@@ -96,7 +115,29 @@ function splitString(str) {
 
   return result;
 }
-function mergeDelimiters(arr) {
+/**
+ * @param {string} str
+ * @param {string[]} delimiters
+ */
+function splitSentence(str, delimiters) {
+  let result = [];
+  let currentWord = "";
+
+  for (let i = 0; i < str.length; i++) {
+    const char = str[i];
+    currentWord += char;
+    if (delimiters.includes(char)) {
+      result.push(currentWord);
+      currentWord = "";
+    }
+  }
+  return result;
+}
+/**
+ * @param {string[]} arr
+ * @param {string[]} delimiters
+ */
+function mergeDelimiters(arr, delimiters) {
   let result = [];
   let currentDelimiter = "";
 
@@ -125,6 +166,9 @@ function mergeDelimiters(arr) {
   return result;
 }
 
+/**
+ * @param { Array<string|{delim:string}> } arr
+ */
 function mergeStringElements(arr) {
   let result = [];
   let currentString = "";
@@ -150,21 +194,25 @@ function mergeStringElements(arr) {
   return result;
 }
 
-function createString(arr) {
+/**
+ * @param { Array<string|{delim:string}> } arr
+ * @param {string} tag
+ */
+function createString(arr, tag) {
   let result = "";
 
   for (let i = 0; i < arr.length; i++) {
     const element = arr[i];
 
     if (typeof element === "string") {
-      result += `<em>${element}</em>`;
+      result += `<${tag}>${element}</${tag}>`;
     } else if (typeof element === "object" && "delim" in element) {
       result += element.delim;
     }
   }
-
   return result;
 }
+
 function formatString(/** @type {string}*/ inputString) {
   const punctuationRegex = /\s+[.,?!:;\)\n]+/g;
   let result = inputString.replace(punctuationRegex, match => match.trim());
@@ -173,12 +221,13 @@ function formatString(/** @type {string}*/ inputString) {
 
 processPages(
   (url, rel, text) => {
+    // чистим текст от странных символов и случайных ошибок форматирования
     return text
       .replaceAll(new RegExp("&lt;&amp;&gt;", "g"), "")
-      .replaceAll(new RegExp("&nbsp;", "g"), " ")
-      .replaceAll(new RegExp("([^\\s])-[\n\\s\r]*(.)", "g"), "$1-$2");
+      .replaceAll(new RegExp("&nbsp;", "g"), " ");
   },
   (url, rel, text) => {
+    // удаляем ссылки на внешние источники там, где они не должны быть
     const $ = cheerio.load(text, {}, false);
     let item = $(".r-synonyms > p a").toArray();
     if (item.length > 0) {
@@ -193,6 +242,122 @@ processPages(
     }
   },
   (url, rel, text) => {
+    // перенумеровываем абзацы перевода
+    const $ = cheerio.load(text, {}, false);
+    let count = 0;
+    let item = $(".wrapper-translation > div").toArray();
+    if (item.length > 0) {
+      item.forEach(item => {
+        const t = $(item);
+        const id = `tr-${++count}`;
+        t.attr("id", id);
+        const st = t.find("strong");
+        st.each((i, elem) => {
+          const item = $(elem);
+          const o = item?.html();
+          if (o) {
+            const res = prepareSentences(o, id, sentenceDelim);
+            item.replaceWith(`<strong>${res}</strong>`);
+          }
+        });
+      });
+      return $.html();
+    } else {
+      return text;
+    }
+  },
+  (url, rel, text) => {
+    // перенумеровываем абзацы комментария
+    const $ = cheerio.load(text, {}, false);
+    let count = 0;
+    let item = $(".wrapper-puport > div").toArray();
+    if (item.length > 0) {
+      item.forEach(item => {
+        const t = $(item);
+        const id = `purp-${++count}`;
+        t.attr("id", id);
+        const st = t.find("p");
+        st.each((i, elem) => {
+          const item = $(elem);
+          const o = st?.html();
+          if (o) {
+            const res = prepareSentences(o, id, sentenceDelim);
+            item.replaceWith(`<p>${res}</p>`);
+          }
+        });
+      });
+      return $.html();
+    } else {
+      return text;
+    }
+  },
+  (url, rel, text) => {
+    // перенумеровываем абзацы основного текста
+    const $ = cheerio.load(text, {}, false);
+    let count = 0;
+    let item = $(".col-12 > div").toArray();
+    if (item.length > 0) {
+      item.forEach(item => {
+        const t = $(item);
+        const id = `text-${++count}`;
+        t.attr("id", id);
+        const st = t.find("p");
+        st.each((i, elem) => {
+          const item = $(elem);
+          const o = st?.html();
+          if (o) {
+            const res = prepareSentences(o, id, sentenceDelim);
+            item.replaceWith(`<p>${res}</p>`);
+          }
+        });
+      });
+      return $.html();
+    } else {
+      return text;
+    }
+  },
+  (url, rel, text) => {
+    // перенумеровываем абзацы основного текста
+    const $ = cheerio.load(text, {}, false);
+    let count = 0;
+    let item = $(".wrapper-synonyms > div").toArray();
+    if (item.length > 0) {
+      item.forEach(item => {
+        const t = $(item);
+        t.attr("id", `syn-${++count}`);
+      });
+      return $.html();
+    } else {
+      return text;
+    }
+  },
+  (url, rel, text) => {
+    // перенумеровываем абзацы основного текста
+    const $ = cheerio.load(text, {}, false);
+    let count = 0;
+    let item = $(".wrapper-verse-text > div").toArray();
+    if (item.length > 0) {
+      item.forEach(item => {
+        const t = $(item);
+        const id = `verse-${++count}`;
+        t.attr("id", id);
+        const st = t.find("em em");
+        st.each((i, elem) => {
+          const item = $(elem);
+          const o = st?.html();
+          if (o) {
+            const res = prepareSentences(o, id, ["<br />", "<br/>"]);
+            item.replaceWith(`${res}`);
+          }
+        });
+      });
+      return $.html();
+    } else {
+      return text;
+    }
+  },
+  (url, rel, text) => {
+    // правим содержимое em внутри комментариев, чтобы было проще сделать набор терминов
     const $ = cheerio.load(text, {}, false);
     let item = $(".r-paragraph p em").toArray();
     if (item.length > 0) {
@@ -200,9 +365,99 @@ processPages(
         const t = $(item);
         const o = t.html();
         if (o) {
-          const result = createString(mergeStringElements(mergeDelimiters(splitString(o))));
+          const result = createString(
+            mergeStringElements(mergeDelimiters(splitString(o, delimiters), delimiters)),
+            "em",
+          );
           t.replaceWith(result);
         }
+      });
+      return $.html();
+    } else {
+      return text;
+    }
+  },
+  (url, rel, text) => {
+    // готовим термины внутри перевода текста
+    const $ = cheerio.load(text, {}, false);
+    let item = $(".r-translation p em").toArray();
+    if (item.length > 0) {
+      item.forEach(item => {
+        const t = $(item);
+        const o = t.html();
+        if (o) {
+          const result = createString(
+            mergeStringElements(mergeDelimiters(splitString(o, delimiters), delimiters)),
+            "em",
+          );
+          t.replaceWith(result);
+        }
+      });
+      return $.html();
+    } else {
+      return text;
+    }
+  },
+  (url, rel, text) => {
+    // внутри параграфов убираем не правильные знаки препинания и лишние пробелы,
+    // которые могли возникнуть в результате форматирования
+    const $ = cheerio.load(text, {}, false);
+    let item = $(".r-paragraph p").toArray();
+    if (item.length > 0) {
+      item.forEach(item => {
+        const t = $(item);
+        const o = t.html();
+        if (o) {
+          const result = formatString(o);
+          t.replaceWith(`<p>${result}</p>`);
+        }
+      });
+      return $.html();
+    } else {
+      return text;
+    }
+  },
+  (url, rel, text) => {
+    // проставляем создаем ссылки на предложения
+    const $ = cheerio.load(text, {}, false);
+    let st = $(".r-paragraph p");
+
+    if (st.length > 0) {
+      st.each((i, elem) => {
+        const item = $(elem);
+        const o = st?.html();
+        if (o) {
+          const id = $(elem).parents(".r-paragraph").attr("id");
+          if (id) {
+            const res = prepareSentences(o, id, ["<br />", "<br/>"]);
+            item.replaceWith(`${res}`);
+          }
+        }
+      });
+      return $.html();
+    } else {
+      return text;
+    }
+  },
+  (url, rel, text) => {
+    // чистим текст от странных символов и случайных ошибок форматирования
+    // в первом блоке не обрабатывается
+    return text
+      .replaceAll(new RegExp("([^\\s])-[\n\\s\\r]*(.)", "g"), "$1-$2");
+  },
+  (url, rel, text) => {
+    const $ = cheerio.load(text, {}, false);
+    let item = $(".r-paragraph p em").toArray();
+    if (item.length > 0) {
+      item.forEach(item => {
+        const t = $(item);
+        const term = t.text().split(" ").length === 1;
+        const content = t.text().toLocaleLowerCase();
+        const store = term ? dict : quotes;
+        store.ensure(content);
+        store.dict.get(content)?.items.push({ file: rel, url: `${url}#${t.parents(".r-paragraph").attr("id")}` });
+        t.attr("id", `${store.ids[content]}`);
+        t.addClass(term ? "term" : "quot");
       });
       return $.html();
     } else {
@@ -215,11 +470,14 @@ processPages(
     if (item.length > 0) {
       item.forEach(item => {
         const t = $(item);
-        const o = t.html();
-        if (o) {
-          const result = createString(mergeStringElements(mergeDelimiters(splitString(o))));
-          t.replaceWith(result);
-        }
+        const term = t.text().split(" ").length === 1;
+        const content = t.text().toLocaleLowerCase();
+        const store = term ? dict : quotes;
+        store.ensure(content);
+        store.dict.get(content)
+          ?.items.push({ file: rel, url: `${url}#${t.parents(".r-translation").attr("id")}` });
+        t.attr("id", `${store.ids[content]}`);
+        t.addClass(term ? "term" : "quot");
       });
       return $.html();
     } else {
@@ -228,72 +486,24 @@ processPages(
   },
   (url, rel, text) => {
     const $ = cheerio.load(text, {}, false);
-    let item = $(".r-paragraph p").toArray();
+    let item = $(".r-synonyms p em").toArray();
     if (item.length > 0) {
       item.forEach(item => {
         const t = $(item);
-        const o = t.html();
-        if (o) {
-          const result = formatString(o);
-          t.replaceWith(`<p>${result}</p>`);
-        } else {
-          t.remove();
-        }
+        const content = t.text().toLocaleLowerCase();
+        sanskrit.ensure(content);
+        sanskrit.dict.get(content)?.items.push({ file: rel, url: `${url}#${t.parents(".r-synonyms").attr("id")}` });
+        t.attr("id", `${sanskrit.ids[content]}`);
+        t.addClass("sanskrit");
       });
       return $.html();
     } else {
       return text;
     }
   },
-  // (url, rel, text) => {
-  //   const $ = cheerio.load(text, {}, false);
-  //   let item = $(".r-paragraph > p > em").toArray();
-  //   if (item.length > 0) {
-  //     item.forEach(item => {
-  //       const t = $(item);
-  //       const content = t.text();
-  //       if (!dict.has(content)) {
-  //         count += 1;
-  //         ids[content] = count;
-  //         dict.set(content, { id: count, items: [] });
-  //       }
-  //       dict.get(content).items.push({ file: rel, url: `${url}#${t.parents(".r-paragraph").attr("id")}` });
-  //       t.attr("id", `${ids[content]}`);
-  //       t.addClass("decide-term");
-  //     });
-  //     return $.html();
-  //   } else {
-  //     return text;
-  //   }
-  // },
-  // (url, rel, text) => {
-  //   const $ = cheerio.load(text, {}, false);
-  //   let item = $(".r-synonyms > p > em").toArray();
-  //   if (item.length > 0) {
-  //     item.forEach(item => {
-  //       const t = $(item);
-  //       const content = t.text();
-  //       if (!dict.has(content)) {
-  //         count += 1;
-  //         ids[content] = count;
-  //         dict.set(content, { id: count, items: [] });
-  //       }
-  //       dict.get(content).items.push({ file: rel, url: `${url}#${t.parents(".r-paragraph").attr("id")}` });
-  //       t.attr("id", `${ids[content]}`);
-  //       t.addClass("decide-term");
-  //     });
-  //     return $.html();
-  //   } else {
-  //     return text;
-  //   }
-  // },
 )
   .then((_) => {
     console.log("done");
-    console.log(dict);
-    if (fs.existsSync(path.join(htmlFolder, "dump.json"))) {
-      fs.unlinkSync(path.join(htmlFolder, "dump.json"));
-    }
   })
   .catch((err) => {
     console.log();
@@ -304,3 +514,32 @@ processPages(
   });
 
 exports.logline = logline;
+
+/**
+ * @param {string} o
+ * @param {string} id
+ * @param {string[]} sentenceDelim
+ * @returns {string}
+ */
+function prepareSentences(o, id, sentenceDelim) {
+  let prep = o
+    .replaceAll("и т. д.,", "____,")
+    .replaceAll("и т. д.", "____.")
+    .replaceAll(/(\d)[.](\d)/ig, "$1[dot]$2")
+    .replaceAll(/(\d)[,](\d)/ig, "$1[comma]$2");
+
+  const sp = splitSentence(prep, [...sentenceDelim, ":"]);
+
+  prep = sp.map((sentence, index) =>
+    sentence ? `<span id="${id}-${index + 1}" class="sentense">${sentence}</span>` : sentence
+  ).join(
+    "",
+  );
+
+  prep = prep.replaceAll("____,", "и т. д.,")
+    .replaceAll("____.", "и т. д.")
+    .replaceAll(/(\d)\[dot\](\d)/ig, "$1.$2")
+    .replaceAll(/(\d)\[comma\](\d)/ig, "$1,$2");
+
+  return prep;
+}
