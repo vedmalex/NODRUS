@@ -21,12 +21,12 @@ fs.existsSync(path.join(htmlFolder, "dump.json"));
 
 /** @type {Array<string>} */
 const linkstoload = [
-  "https://vedabase.io/ru/library/bg/",
-  // "https://vedabase.io/ru/library/iso/",
-  // "https://vedabase.io/ru/library/nod/",
-  // "https://vedabase.io/ru/library/noi/",
-  // "https://vedabase.io/ru/library/sb/",
   // "https://vedabase.io/ru/library/cc/",
+  // "https://vedabase.io/ru/library/sb/",
+  "https://vedabase.io/ru/library/noi/",
+  "https://vedabase.io/ru/library/nod/",
+  "https://vedabase.io/ru/library/iso/",
+  "https://vedabase.io/ru/library/bg/",
 ];
 
 // предоположительно работать будет из кэша
@@ -474,6 +474,26 @@ processPages(
     }
   },
   (url, rel, text) => {
+    const $ = cheerio.load(text, {}, false);
+    let st = $(".r-synonyms p");
+    if (st.length > 0) {
+      st.each((i, elem) => {
+        const item = $(elem);
+        const o = item?.html();
+        if (o) {
+          const id = $(elem).parents(".r-synonyms").attr("id");
+          if (id) {
+            const res = prepareSentences(o, id, [";", "."]);
+            item.replaceWith(`${res}`);
+          }
+        }
+      });
+      return $.html();
+    } else {
+      return text;
+    }
+  },
+  (url, rel, text) => {
     // чистим текст от странных символов и случайных ошибок форматирования
     // в первом блоке не обрабатывается
     return text
@@ -486,11 +506,6 @@ processPages(
       item.forEach(item => {
         const t = $(item);
         const term = t.text().split(" ").length === 1;
-        const content = t.text().toLocaleLowerCase();
-        const store = term ? dict : quotes;
-        store.ensure(content);
-        store.dict.get(content)?.items.push({ file: rel, url: `${url}#${t.parents(".r-paragraph").attr("id")}` });
-        t.attr("id", `${store.ids[content]}`);
         t.addClass(term ? "term" : "quot");
       });
       return $.html();
@@ -505,12 +520,6 @@ processPages(
       item.forEach(item => {
         const t = $(item);
         const term = t.text().split(" ").length === 1;
-        const content = t.text().toLocaleLowerCase();
-        const store = term ? dict : quotes;
-        store.ensure(content);
-        store.dict.get(content)
-          ?.items.push({ file: rel, url: `${url}#${t.parents(".r-translation").attr("id")}` });
-        t.attr("id", `${store.ids[content]}`);
         t.addClass(term ? "term" : "quot");
       });
       return $.html();
@@ -524,10 +533,6 @@ processPages(
     if (item.length > 0) {
       item.forEach(item => {
         const t = $(item);
-        const content = t.text().toLocaleLowerCase();
-        sanskrit.ensure(content);
-        sanskrit.dict.get(content)?.items.push({ file: rel, url: `${url}#${t.parents(".r-synonyms").attr("id")}` });
-        t.attr("id", `${sanskrit.ids[content]}`);
         t.addClass("sanskrit");
       });
       return $.html();
@@ -537,6 +542,7 @@ processPages(
   },
 )
   .then((_) => {
+    console.log();
     console.log("done");
   })
   .catch((err) => {
@@ -565,7 +571,7 @@ function prepareSentences(o, id, sentenceDelim) {
   const sp = splitSentence(prep, [...sentenceDelim, ":"]);
 
   prep = sp.map((sentence, index) =>
-    sentence ? `<span id="${id}-${index + 1}" class="sentense">${sentence}</span>` : sentence
+    sentence ? `<span id="${id}-${index + 1}" class="sentence">${sentence}</span>` : sentence
   ).join(
     "",
   );

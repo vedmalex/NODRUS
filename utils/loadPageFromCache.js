@@ -4,7 +4,6 @@ const path = require("node:path");
 const { logline } = require("./logline");
 const { getPage } = require("./getPage");
 const cheerio = require("cheerio");
-const prettier = require("prettier");
 /**
  * @param {string} url
  * @param {string} baseurl

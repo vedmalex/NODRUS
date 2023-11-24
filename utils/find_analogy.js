@@ -19,12 +19,12 @@ fs.existsSync(path.join(htmlFolder, "dump.json"));
 
 /** @type {Array<string>} */
 const linkstoload = [
-  "https://vedabase.io/ru/library/bg/",
-  // "https://vedabase.io/ru/library/iso/",
-  // "https://vedabase.io/ru/library/nod/",
-  // "https://vedabase.io/ru/library/noi/",
-  // "https://vedabase.io/ru/library/sb/",
   // "https://vedabase.io/ru/library/cc/",
+  // "https://vedabase.io/ru/library/sb/",
+  // "https://vedabase.io/ru/library/noi/",
+  // "https://vedabase.io/ru/library/nod/",
+  // "https://vedabase.io/ru/library/iso/",
+  "https://vedabase.io/ru/library/bg/",
 ];
 
 // предоположительно работать будет из кэша
@@ -214,11 +214,10 @@ processPages(
   },
 )
   .then((_) => {
+    console.log();
     console.log("done");
-    fs.writeFileSync("result.txt", Bun.inspect(analogies.dict.entries()));
-    if (fs.existsSync(path.join(htmlFolder, "dump.json"))) {
-      fs.unlinkSync(path.join(htmlFolder, "dump.json"));
-    }
+    analogies.dict.entries();
+    fs.writeFileSync("analogy.txt", Bun.inspect(analogies.dict.entries()));
   })
   .catch((err) => {
     console.log();
