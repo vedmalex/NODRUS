@@ -35,6 +35,7 @@
     "vuepress-plugin-fulltext-search": "^2.2.1"
   },
   "dependencies": {
+    "bun-types": "^1.0.14",
     "gql-schema-builder": "^1.0.3"
   }
 }

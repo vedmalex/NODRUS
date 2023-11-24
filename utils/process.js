@@ -43,15 +43,14 @@ async function processPages(...actions) {
     url = linkstoload.shift();
     const page = await loadPageFromCache(url, baseurl, backupFolder);
 
+    const links = [...getToc(page.text, site), ...getVerses(page.text, site), ...getBook(page.text, site)];
+    links.forEach((link) => linkstoload.push(link.href));
+
     let ret = page.text;
     actions.forEach(action => {
       ret = action(url, page.relativeUrl, ret);
     });
-    if (ret !== page.text) {
-      writeUpdatedFile(url, baseurl, htmlFolder, ret);
-    }
-    const links = [...getToc(page.text, site), ...getVerses(page.text, site), ...getBook(page.text, site)];
-    links.forEach((link) => linkstoload.push(link.href));
+    writeUpdatedFile(url, baseurl, htmlFolder, ret);
   }
 }
 
@@ -87,6 +86,7 @@ const sanskrit = new Dict();
 
 const delimiters = [".", ",", "!", "?", ":", ";", "—", "(", ")", " ", "\n", "\r"];
 const sentenceDelim = [".", "!", "?"];
+const sentenceDelimPartners = [" ", "\"", "'", "«", "»", "“", "„"];
 /**
  * @param {string} str
  * @param {string[]} delimiters
@@ -115,6 +115,7 @@ function splitString(str, delimiters) {
 
   return result;
 }
+
 /**
  * @param {string} str
  * @param {string[]} delimiters
@@ -124,13 +125,43 @@ function splitSentence(str, delimiters) {
   let currentWord = "";
 
   for (let i = 0; i < str.length; i++) {
-    const char = str[i];
-    currentWord += char;
-    if (delimiters.includes(char)) {
-      result.push(currentWord);
-      currentWord = "";
+    let delimiterFound = false;
+
+    for (let j = 0; j < delimiters.length; j++) {
+      const delimiter = delimiters[j];
+
+      if (str.startsWith(delimiter, i)) {
+        currentWord += delimiter;
+        i += delimiter.length - 1;
+        delimiterFound = true;
+        result.push(currentWord);
+        currentWord = "";
+        break;
+      }
+    }
+
+    if (!delimiterFound) {
+      currentWord += str[i];
     }
   }
+
+  if (currentWord) {
+    result.push(currentWord);
+  }
+
+  result = result.reduce((/** @type {string[]}*/ res, cur) => {
+    if (
+      // А.
+      (cur.length < 3 && res.length > 0)
+      // А.Ч.
+      || (res.length > 0 && res[res.length - 1].length < 7)
+    ) {
+      res[res.length - 1] += cur;
+    } else {
+      res.push(cur);
+    }
+    return res;
+  }, []);
   return result;
 }
 /**
@@ -295,21 +326,12 @@ processPages(
     // перенумеровываем абзацы основного текста
     const $ = cheerio.load(text, {}, false);
     let count = 0;
-    let item = $(".col-12 > div").toArray();
+    let item = $(".col-12 > div");
     if (item.length > 0) {
-      item.forEach(item => {
+      item.each((i, item) => {
         const t = $(item);
         const id = `text-${++count}`;
         t.attr("id", id);
-        const st = t.find("p");
-        st.each((i, elem) => {
-          const item = $(elem);
-          const o = st?.html();
-          if (o) {
-            const res = prepareSentences(o, id, sentenceDelim);
-            item.replaceWith(`<p>${res}</p>`);
-          }
-        });
       });
       return $.html();
     } else {
@@ -325,31 +347,6 @@ processPages(
       item.forEach(item => {
         const t = $(item);
         t.attr("id", `syn-${++count}`);
-      });
-      return $.html();
-    } else {
-      return text;
-    }
-  },
-  (url, rel, text) => {
-    // перенумеровываем абзацы основного текста
-    const $ = cheerio.load(text, {}, false);
-    let count = 0;
-    let item = $(".wrapper-verse-text > div").toArray();
-    if (item.length > 0) {
-      item.forEach(item => {
-        const t = $(item);
-        const id = `verse-${++count}`;
-        t.attr("id", id);
-        const st = t.find("em em");
-        st.each((i, elem) => {
-          const item = $(elem);
-          const o = st?.html();
-          if (o) {
-            const res = prepareSentences(o, id, ["<br />", "<br/>"]);
-            item.replaceWith(`${res}`);
-          }
-        });
       });
       return $.html();
     } else {
@@ -418,18 +415,55 @@ processPages(
     }
   },
   (url, rel, text) => {
-    // проставляем создаем ссылки на предложения
+    // перенумеровываем абзацы основного текста
     const $ = cheerio.load(text, {}, false);
-    let st = $(".r-paragraph p");
-
+    let item = $(".col-12 > div > p");
+    if (item.length > 0) {
+      item.each((i, item) => {
+        const st = $(item);
+        const id = st.parents("div").attr("id");
+        st.each((i, elem) => {
+          const item = $(elem);
+          const o = item?.html();
+          if (o) {
+            const res = prepareSentences(o, id, sentenceDelim);
+            item.replaceWith(`<p>${res}</p>`);
+          }
+        });
+      });
+      return $.html();
+    } else {
+      return text;
+    }
+  },
+  (url, rel, text) => {
+    // перенумеровываем абзацы основного текста
+    const $ = cheerio.load(text, {}, false);
+    let count = 0;
+    let item = $(".wrapper-verse-text > div").toArray();
+    if (item.length > 0) {
+      item.forEach(item => {
+        const t = $(item);
+        const id = `verse-${++count}`;
+        t.attr("id", id);
+      });
+      return $.html();
+    } else {
+      return text;
+    }
+  },
+  (url, rel, text) => {
+    // проставляем создаем ссылки на предложения в шлоках
+    const $ = cheerio.load(text, {}, false);
+    let st = $(".r-verse-text em");
     if (st.length > 0) {
       st.each((i, elem) => {
         const item = $(elem);
-        const o = st?.html();
+        const o = item?.html();
         if (o) {
-          const id = $(elem).parents(".r-paragraph").attr("id");
+          const id = $(elem).parents(".r-verse-text").attr("id");
           if (id) {
-            const res = prepareSentences(o, id, ["<br />", "<br/>"]);
+            const res = prepareSentences(o, id, ["<br />", "<br/>", "<br>"]);
             item.replaceWith(`${res}`);
           }
         }

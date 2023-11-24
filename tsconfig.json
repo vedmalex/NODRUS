@@ -22,7 +22,7 @@
     "noUnusedLocals": true,
     "forceConsistentCasingInFileNames": true,
     "lib": [
-      "ESNext"
+      "ESNext",
     ],
     "allowSyntheticDefaultImports": true,
     "target": "es2018",
@@ -30,7 +30,8 @@
     "moduleResolution": "node",
     "types": [
       "node",
-      "jest"
+      "jest",
+      "bun-types"
     ],
     "baseUrl": ".",
     "outDir": "types",
